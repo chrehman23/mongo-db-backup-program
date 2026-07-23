@@ -1,47 +1,56 @@
 import inquirer from 'inquirer';
 import { exportDatabase, importDatabase, listBackups } from './db-backup.js';
 
-
 async function mainMenu() {
     let running = true;
 
     while (running) {
-        const { action } = await inquirer.prompt([
-            {
-                type: 'select', // <--- Changed from 'list' to 'select'
-                name: 'action',
-                message: 'What would you like to do?',
-                choices: [
-                    { name: '1. List all DB backups', value: 'list' },
-                    { name: '2. Create a new backup', value: 'export' },
-                    { name: '3. Restore DB from an existing backup', value: 'import' },
-                    new inquirer.Separator(),
-                    { name: 'Exit', value: 'exit' },
-                ],
-            },
-        ]);
+        try {
+            const { action } = await inquirer.prompt([
+                {
+                    type: 'select', // Fixed: 'select' is the modern prompt type for Inquirer
+                    name: 'action',
+                    message: 'What would you like to do?',
+                    choices: [
+                        { name: '1. List all DB backups', value: 'list' },
+                        { name: '2. Create a new backup', value: 'export' },
+                        { name: '3. Restore DB from an existing backup', value: 'import' },
+                        new inquirer.Separator(),
+                        { name: 'Exit', value: 'exit' },
+                    ],
+                },
+            ]);
 
-        switch (action) {
-            case 'list':
-                await handleListBackups();
-                break;
+            switch (action) {
+                case 'list':
+                    await handleListBackups();
+                    break;
 
-            case 'export':
-                await handleExportDatabase();
-                break;
+                case 'export':
+                    await handleExportDatabase();
+                    break;
 
-            case 'import':
-                await handleImportDatabase();
-                break;
+                case 'import':
+                    await handleImportDatabase();
+                    break;
 
-            case 'exit':
-                console.log('\nGoodbye!');
-                running = false;
-                break;
-        }
+                case 'exit':
+                    console.log('\nGoodbye!');
+                    running = false;
+                    break;
+            }
 
-        if (running) {
-            console.log('\n----------------------------------------\n');
+            if (running) {
+                console.log('\n----------------------------------------\n');
+            }
+        } catch (error) {
+            // Handle Ctrl + C gracefully without throwing unhandled exceptions
+            if (error.isTtyError || error.name === 'ExitPromptError' || error.message?.includes('force closed')) {
+                console.log('\n\nOperation cancelled by user. Exiting...\n');
+                process.exit(0);
+            }
+            console.error('An unexpected error occurred:', error);
+            running = false;
         }
     }
 }
@@ -85,7 +94,7 @@ async function handleImportDatabase() {
     // 1. Select backup using arrow keys
     const { selectedBackupFolder } = await inquirer.prompt([
         {
-            type: 'select', // <--- Changed from 'list' to 'select'
+            type: 'select', // Fixed: updated to 'select'
             name: 'selectedBackupFolder',
             message: 'Select a backup folder to restore:',
             choices: backups.map((b) => ({

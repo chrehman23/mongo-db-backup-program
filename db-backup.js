@@ -22,9 +22,6 @@ function getFolderName(dbName) {
   return `${dbName}_${timestamp}`;
 }
 
-/**
- * EXPORT: Uses BSON.EJSON to preserve ObjectIds, Dates, and Nested JSON structures.
- */
 export async function exportDatabase(dbName, outputDir = EXPORT_BASE_DIR) {
   if (!MONGO_URI) {
     throw new Error('MONGO_URI is not defined in your .env file');
@@ -100,7 +97,7 @@ export async function exportDatabase(dbName, outputDir = EXPORT_BASE_DIR) {
         progressBar.update(colProcessedDocs);
       }
 
-      // EJSON.stringify preserves MongoDB types ($oid, $date, nested objects, etc.)
+      // EJSON.stringify preserves native types ($oid, $date, deep nested JSON structures)
       const serializedData = BSON.EJSON.stringify(data, null, 2, { relaxed: false });
       await fs.writeFile(filePath, serializedData, 'utf-8');
 
@@ -166,9 +163,6 @@ export async function listBackups(baseDir = EXPORT_BASE_DIR) {
   }
 }
 
-/**
- * IMPORT: Uses BSON.EJSON to reconstruct true ObjectIds, Dates, and Nested JSON.
- */
 export async function importDatabase(dbName, sourceFolderName, baseDir = EXPORT_BASE_DIR) {
   if (!MONGO_URI) {
     throw new Error('MONGO_URI is not defined in your .env file');
@@ -205,7 +199,7 @@ export async function importDatabase(dbName, sourceFolderName, baseDir = EXPORT_
 
       const rawData = await fs.readFile(filePath, 'utf-8');
 
-      // EJSON.parse restores real ObjectIds, ISODates, and deep object structures
+      // EJSON.parse converts $oid and $date representations back to MongoDB ObjectIds and Dates
       const documents = BSON.EJSON.parse(rawData, { relaxed: false });
 
       if (!Array.isArray(documents) || documents.length === 0) {
